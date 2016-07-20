@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="sort">
+        <item>Sort By Name...</item>
+        <item>Sort By Set...</item>
+        <item>Sort By Rarity...</item>
+        <item>Sort By Faction...</item>
+        <item>Sort By Type...</item>
+    </string-array>
+    <string-array name="rarity">
+        <item>@string/legendary</item>
+        <item>@string/heroic</item>
+        <item>@string/rare</item>
+        <item>@string/common</item>
+    </string-array>
+    <string-array name="faction">
+        <item>@string/alloyin</item>
+        <item>@string/nekrium</item>
+        <item>@string/tempys</item>
+        <item>@string/uterra</item>
+    </string-array>
+    <string-array name="set">
+        <item>@string/set_one</item>
+        <item>@string/set_two</item>
+        <item>@string/set_three</item>
+        <item>@string/set_four</item>
+        <item>@string/set_five</item>
+        <item>@string/set_six</item>
+        <item>@string/set_seven</item>
+    </string-array>
+</resources>

@@ -1,0 +1,69 @@
+<resources>
+    <string name="app_name">Cards</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_nav_drawer">Cards</string>
+
+    <!-- Nav Drawer Titles -->
+    <string name="card_search">Card Search</string>
+    <string name="deck_builder">Deck Builder</string>
+    <string name="donate">Donate</string>
+    <string name="about">About</string>
+
+    <!-- Nav Drawer Required Strings -->
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <!-- Menu Titles -->
+    <string name="action_settings">Settings</string>
+    <string name="action_filter">Filter</string>
+
+    <!-- Messages -->
+    <string name="error">Something Went Wrong (-~-)</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <!-- Dialogs -->
+    <string name="sort_dialog">Sort Cards</string>
+    <string name="sort">Sort By...</string>
+    <string name="filter_cards">Filter Cards</string>
+    <string name="filter">Filter</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Set Names -->
+    <string name="set_one">Alpha</string>
+    <string name="set_two">Rise of the Forgeborn</string>
+    <string name="set_three">Secrets of Solis</string>
+    <string name="set_four">Imprisoned Heralds</string>
+    <string name="set_five">Reign of Varna</string>
+    <string name="set_six">Darkforge Uprising</string>
+    <string name="set_seven">Raiders Unchained</string>
+
+    <!-- Rarities -->
+    <string name="legendary">Legendary</string>
+    <string name="heroic">Heroic</string>
+    <string name="rare">Rare</string>
+    <string name="common">Common</string>
+
+    <!-- Factions -->
+    <string name="alloyin">Alloyin</string>
+    <string name="nekrium">Nekrium</string>
+    <string name="tempys">Tempys</string>
+    <string name="uterra">Uterra</string>
+
+    <!-- ImageView contentDescription -->
+    <string name="rarity">Card Rarity</string>
+    <string name="image">Card Artwork</string>
+    <string name="faction">Card Faction</string>
+
+    <!-- Misc -->
+    <string name="spell">Spell</string>
+    <string name="creature">Creature</string>
+    <string name="description_header">Description:</string>
+
+    <string name="basepath">
+        https://raw.githubusercontent.com/itsdannyboi/cardsforsolforge/master/SolforgeCardArt/
+    </string>
+
+    <string name="hello_blank_fragment">ReplaceMe</string>
+
+</resources>
