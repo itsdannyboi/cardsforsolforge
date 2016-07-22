@@ -1,39 +1,35 @@
 package com.solforge.carddbforsolforge;
 
 import android.content.Context;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
-/**
- * Created by Daniel on 6/29/2016.
- */
 
 public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
 
     private List<Card> cards;
     private Context context;
+    private CardSearchFrag fragment;
 
-    RVAdapter (List<Card> cards, Context context) {
-        this.cards = cards;
+    RVAdapter (List<Card> cards, Context context, CardSearchFrag fragment) {
+        this.cards = new ArrayList<>(cards);
         this.context = context;
+        this.fragment = fragment;
     }
 
     public class CardViewHolder extends RecyclerView.ViewHolder implements
@@ -56,16 +52,18 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
 
         @Override
         public void onClick(View v) {
-            // TODO: create new expanded cardview Fragment
-            CardSearchFrag.startEXCV(cards, getAdapterPosition());
-            Toast.makeText(context, cards.get(getAdapterPosition()).getName(),
-                    Toast.LENGTH_SHORT).show();
+            fragment.startEXCV(cards, getAdapterPosition());
         }
     }
 
     @Override
     public int getItemCount() {
         return cards.size();
+    }
+    public List<Card> getCards () { return this.cards; }
+    public void setCards (List<Card> vals) {
+        cards.clear();
+        cards.addAll(vals);
     }
 
     @Override
@@ -96,7 +94,7 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
         super.onAttachedToRecyclerView(recyclerView);
     }
 
-    public int cardFactionHelper (int i) {
+    private int cardFactionHelper (int i) {
         int faction;
         switch (cards.get(i).getFaction()) {
             case "Alloyin":
@@ -118,7 +116,7 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
         return faction;
     }
 
-    public int cardRarityHelper (int i) {
+    private int cardRarityHelper (int i) {
         int rarity;
         switch (cards.get(i).getRarity()) {
             case "Common":
@@ -140,32 +138,55 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
         return rarity;
     }
 
-    public void sortAndUpdateData(int i) {
-        switch (i) {
-            case 0:
-                // Sort by name
-                Collections.sort(cards);
-                break;
-            case 1:
-                // Sort by set
-                Collections.sort(cards, new Card.BySet());
-                break;
-            case 2:
-                // Sort by rarity
-                Collections.sort(cards, new Card.ByRarity());
-                break;
-            case 3:
-                // Sort by faction
-                Collections.sort(cards, new Card.ByFaction());
-                break;
-            case 4:
-                // Sort by type
-                Collections.sort(cards, new Card.ByType());
-                break;
-            default:
-                break;
+    public Card removeItem (int position) {
+        final Card card = cards.remove(position);
+        notifyItemRemoved(position);
+        return card;
+    }
+
+    public void addItem (int position, Card card) {
+        this.cards.add(position, card);
+        notifyItemInserted(position);
+    }
+
+    public void moveItem (int fromPosition, int toPosition) {
+        final Card card = this.cards.remove(fromPosition);
+        this.cards.add(toPosition, card);
+        notifyItemMoved(fromPosition, toPosition);
+    }
+
+    public void animateTo (List<Card> input) {
+        applyAndAnimateRemovals(input);
+        applyAndAnimateAdditions(input);
+        applyAndAnimateMoveItems(input);
+    }
+
+    private void applyAndAnimateRemovals (List<Card> input) {
+        for (int i = this.cards.size() - 1; i >= 0; i--) {
+            final Card card = this.cards.get(i);
+            if (!input.contains(card)) {
+                removeItem(i);
+            }
         }
-        notifyDataSetChanged();
+    }
+
+    private void applyAndAnimateAdditions (List<Card> input) {
+        for (int i = 0; i < input.size(); i++) {
+            final Card card = input.get(i);
+            if (!this.cards.contains(card)) {
+                addItem(i, card);
+            }
+        }
+    }
+
+    private void applyAndAnimateMoveItems (List<Card> input) {
+        for (int toPosition = input.size() - 1; toPosition >= 0; toPosition--) {
+            final Card card = input.get(toPosition);
+            final int fromPostion = this.cards.indexOf(card);
+            if (fromPostion >= 0 && fromPostion != toPosition) {
+                moveItem(fromPostion, toPosition);
+            }
+        }
     }
 }
 

@@ -2,7 +2,6 @@ package com.solforge.carddbforsolforge;
 
 
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,8 +11,6 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-
-import org.w3c.dom.Text;
 
 
 public class EXCVFragment extends Fragment {
@@ -51,25 +48,26 @@ public class EXCVFragment extends Fragment {
         // code for divider?
 
         Glide.with(this)
-                .load(cardSelected.getImage(levelSelected))
+                .load(getResources().getString(R.string.basepath) +
+                        cardSelected.getImage(levelSelected))
                 .placeholder(R.drawable.ic_image_black)
                 .error(R.drawable.ic_broken_image_black)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(cardImage);
 
         cardFaction.setImageResource(cardFactionHelper(cardSelected));
-        cardAttack.setText(cardSelected.getAtk(levelSelected));
-        cardHealth.setText(cardSelected.getHealth(levelSelected));
+        cardAttack.setText(String.valueOf(cardSelected.getAtk(levelSelected)));
+        cardHealth.setText(String.valueOf(cardSelected.getHealth(levelSelected)));
         cardName.setText(cardSelected.getName());
         cardType.setText(getType(cardSelected));
         cardSet.setText(getSet(cardSelected));
-        cardDraft.setText(getDraft(cardSelected));
+        cardDraft.setText(String.valueOf(cardSelected.getDraft()));
         cardDesc.setText(cardSelected.getDesc(levelSelected));
 
         return rootView;
     }
 
-    public int cardFactionHelper (Card cardSelected) {
+    private int cardFactionHelper (Card cardSelected) {
         int faction;
         switch (cardSelected.getFaction()) {
             case "Alloyin":
@@ -91,7 +89,7 @@ public class EXCVFragment extends Fragment {
         return faction;
     }
 
-    public String getType (Card card) {
+    private String getType (Card card) {
         if (card.getType().equals("Spell")) {
             return card.getType();
         } else {
@@ -99,14 +97,10 @@ public class EXCVFragment extends Fragment {
         }
     }
 
-    public String getSet (Card card) {
+    private String getSet (Card card) {
         String[] sets = getResources().getStringArray(R.array.set);
         int i = card.getSet();
         return ((i>0 && i <=sets.length) ? sets[i-1] : getString(R.string.error));
-    }
-
-    public String getDraft (Card card) {
-        return "Draft: " + String.valueOf(cardSelected.getDraft());
     }
 
     public Card getCardSelected () { return this.cardSelected; }

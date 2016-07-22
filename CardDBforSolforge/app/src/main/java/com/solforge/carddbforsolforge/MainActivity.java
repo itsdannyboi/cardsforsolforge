@@ -1,24 +1,16 @@
 package com.solforge.carddbforsolforge;
 
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.CompoundButtonCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.CompoundButton;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,8 +18,8 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private NavigationView navigationView;
     private ActionBarDrawerToggle drawerToggle;
-    Class fragmentClass = null;
-    Fragment fragment = null;
+    private Class fragmentClass = null;
+    private Fragment fragment = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,13 +81,6 @@ public class MainActivity extends AppCompatActivity {
         drawerToggle.onConfigurationChanged(newConfig);
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.nav_drawer, menu);
-//        return true;
-//    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (drawerToggle.onOptionsItemSelected(item)) {
@@ -125,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    public void selectDrawerItem (MenuItem menuItem) {
+    private void selectDrawerItem (MenuItem menuItem) {
         // Creates and shows frag to view content
         switch(menuItem.getItemId()) {
             case R.id.card_search:
@@ -155,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
         drawer.closeDrawers();
     }
 
-    public void instantiateFrag(Class fragmentClass) {
+    private void instantiateFrag(Class fragmentClass) {
         try {
             fragment = (Fragment) fragmentClass.newInstance();
         } catch (Exception e) {

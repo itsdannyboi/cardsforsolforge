@@ -42,6 +42,6 @@ public class SortByDialog extends DialogFragment {
     }
 
     public interface sortByDialogListener {
-        public void onClickSortMethod(int i);
+        void onClickSortMethod(int i);
     }
 }

@@ -16,4 +16,8 @@
     <color name="heroic">#EBB800</color>
     <color name="rare">#008CBC</color>
     <color name="common">#297500</color>
+
+    <!-- Page Indicator Dots -->
+    <color name="dot_indicator_inactive">#E0E0E0</color>
+    <color name="dot_indicator_active">#BDBDBD</color>
 </resources>

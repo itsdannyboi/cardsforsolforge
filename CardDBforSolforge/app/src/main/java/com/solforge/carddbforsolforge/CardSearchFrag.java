@@ -1,27 +1,24 @@
 package com.solforge.carddbforsolforge;
 
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SwitchCompat;
-import android.view.GestureDetector;
+import android.support.v7.widget.SearchView;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,11 +26,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialogListener {
+public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialogListener,
+        FilterDialogFragment.FilterDialogListener {
 
     private static final String TAG = "Card Search Frag";
     private static final String KEY_LAYOUT_MANAGER = "layoutManager";
@@ -48,12 +48,12 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
     private RecyclerView recyclerView;
     private RecyclerView.LayoutManager layoutManager;
     private RVAdapter adapter;
+    private TextView emptyView;
+    private ToggleButton toggleButton;
 
     private List<Card> cards;
-
-    private SwitchCompat switchCompat;
-
     private int sortByItemSelected = 0;
+    private HashMap<String, Boolean> selectedFilters;
 
     public static CardSearchFrag newInstance() {
         CardSearchFrag fragment = new CardSearchFrag();
@@ -67,6 +67,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         setHasOptionsMenu(true);
 
         cards = getCards();
+        initSelected();
     }
 
     @Override
@@ -76,6 +77,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         rootView.setTag(TAG);
 
         recyclerView = (RecyclerView) rootView.findViewById(R.id.rv);
+        emptyView = (TextView) rootView.findViewById(R.id.empty_view);
 
         layoutManager = new LinearLayoutManager(getActivity());
 
@@ -88,7 +90,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         }
         setRecyclerViewLayoutManager(currentLayoutManagerType);
 
-        adapter = new RVAdapter(cards, getActivity());
+        adapter = new RVAdapter(cards, getActivity(), CardSearchFrag.this);
         recyclerView.setAdapter(adapter);
 
         return rootView;
@@ -97,23 +99,42 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.card_search_menu, menu);
-        MenuItem item = menu.findItem(R.id.nav_switch);
-        item.setActionView(R.layout.action_view_switch);
-        RelativeLayout relativeLayout = (RelativeLayout) MenuItemCompat.getActionView(item);
-        switchCompat = (SwitchCompat) relativeLayout.findViewById(R.id.action_bar_switch);
-        switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        MenuItem toggle = menu.findItem(R.id.nav_switch);
+        toggle.setActionView(R.layout.action_view_switch);
+        RelativeLayout relativeLayout = (RelativeLayout) MenuItemCompat.getActionView(toggle);
+        toggleButton = (ToggleButton) relativeLayout.findViewById(R.id.toggle_layout);
+        toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // Change layout between grid and linear
                 setRecyclerViewLayoutManager(isChecked
                         ? LayoutManagerType.GRID_LAYOUT_MANAGER
                         : LayoutManagerType.LINEAR_LAYOUT_MANAGER);
-
-                // Change text size so that card names are smaller for grid
-                //((TextView) getActivity().findViewById(R.id.card_name)).setTextSize(isChecked
-                //        ? R.dimen.grid_layout_text_size : R.dimen.linear_layout_text_size);
             }
         });
+
+        /*MenuItem search = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(search);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String query) {
+                if (query != null) {
+                    final List<Card> searchedCards = search(cards, query);
+                    adapter.animateTo(searchedCards);
+                    if (!isDataEmpty(searchedCards)) {
+                        recyclerView.scrollToPosition(0);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });*/
+
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -125,11 +146,14 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
                 return true;
             case R.id.action_filter:
                 // case for filter
+                DialogFragment filterFrag = FilterDialogFragment.newInstance(selectedFilters);
+                filterFrag.setTargetFragment(CardSearchFrag.this, 300);
+                filterFrag.show(this.getFragmentManager(), "FilterDialog");
                 return true;
             case R.id.action_sort:
-                DialogFragment dialogFragment = SortByDialog.newInstance(sortByItemSelected);
-                dialogFragment.setTargetFragment(CardSearchFrag.this, 300);
-                dialogFragment.show(getFragmentManager(), "SortByDialog");
+                DialogFragment sortFrag = SortByDialog.newInstance(sortByItemSelected);
+                sortFrag.setTargetFragment(CardSearchFrag.this, 300);
+                sortFrag.show(this.getFragmentManager(), "SortByDialog");
                 return true;
             default:
                 // if we get here, the user's action was not recognized
@@ -145,7 +169,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         super.onSaveInstanceState(savedInstanceState);
     }
 
-    public void setRecyclerViewLayoutManager (LayoutManagerType layoutManagerType) {
+    private void setRecyclerViewLayoutManager (LayoutManagerType layoutManagerType) {
         int scrollPosition = 0;
 
         // If a layout manager has already been set, get current scroll position
@@ -172,11 +196,10 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         recyclerView.scrollToPosition(scrollPosition);
     }
 
-    public List<Card> getCards() {
+    private List<Card> getCards() {
         List<Card> temp = new ArrayList<>();
-        JSONArray jsonArray = null;
         try {
-            jsonArray = new JSONArray(loadJSON());
+            JSONArray jsonArray = new JSONArray(loadJSON());
             for (int i=0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
                 if (!(obj.getString("rarity").equals("Token"))) {
@@ -191,7 +214,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         return temp;
     }
 
-    public String loadJSON() {
+    private String loadJSON() {
         String json = null;
         try {
             InputStream is = getActivity().getAssets().open("cardDB.json");
@@ -207,14 +230,157 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         return json;
     }
 
+    private void initSelected() {
+        String[] rarity = getResources().getStringArray(R.array.rarity);
+        String[] faction = getResources().getStringArray(R.array.faction);
+        String[] set = getResources().getStringArray(R.array.set);
+
+        // 2 accounts for creatures and spells
+        // The rest is total number of rarities, factions, and sets
+        selectedFilters = new HashMap<>(2 + rarity.length + faction.length + set.length);
+
+        selectedFilters.put(getString(R.string.creature), true);
+        selectedFilters.put(getString(R.string.spell), true);
+
+        // all values start as true
+        // this is so that all checkboxes are true
+        for (int i = 0; i < returnGreatest(rarity.length, faction.length, set.length); i++) {
+            if (i < rarity.length) {
+                selectedFilters.put(rarity[i], true);
+            }
+            if (i < faction.length) {
+                selectedFilters.put(faction[i], true);
+            }
+            if (i < set.length) {
+                selectedFilters.put(set[i], true);
+            }
+        }
+    }
+
+    private int returnGreatest(int one, int two, int three) {
+        if (one > two) {
+            return (one > three) ? one : three;
+        } else {
+            return (two > three) ? two : three;
+        }
+    }
+
     @Override
     public void onClickSortMethod (int i) {
         sortByItemSelected = i;
-        adapter.sortAndUpdateData(i);
+        final List<Card> sortedCards = sort(cards, i);
+        adapter.animateTo(sortedCards);
+        if (!isDataEmpty(sortedCards)) {
+            recyclerView.scrollToPosition(0);
+        }
     }
 
-    public static void startEXCV (List<Card> cards, int position) {
+    @Override
+    public void onClickFilter (HashMap<String, Boolean> selectedFilters) {
+        this.selectedFilters = new HashMap<>(selectedFilters);
+        final List<Card> filteredCards = filter(cards, selectedFilters);
+        adapter.animateTo(filteredCards);
+        if (!isDataEmpty(filteredCards)) {
+            recyclerView.scrollToPosition(0);
+        }
+    }
+
+    public void startEXCV (List<Card> cards, int position) {
         EXCVFragment excvFragment = EXCVFragment.newInstance(cards.get(position));
-        // TODO: figure out how to start this fragment
+        this.getFragmentManager().beginTransaction()
+                .replace(R.id.frag_content, excvFragment, "Extended Card View")
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private boolean isDataEmpty (List<Card> input) {
+        // if input data is empty, hide recyclerview
+        // and show empty textview
+        if (input.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            emptyView.setVisibility(View.VISIBLE);
+            return true;
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            emptyView.setVisibility(View.GONE);
+            return false;
+        }
+    }
+
+    private List<Card> search (List<Card> input, String query) {
+        query = query.toLowerCase();
+
+        final List<Card> searchedCards = new ArrayList<>();
+        for (Card currCard : input) {
+            final String name = currCard.getName();
+            final String[] desc = currCard.getDesc();
+            final String[] tribe = currCard.getTribe();
+            if (containsQuery(query, name, desc, tribe)) {
+                searchedCards.add(currCard);
+            }
+        }
+        return searchedCards;
+    }
+
+    private List<Card> sort (List<Card> input, int sortMethod) {
+        switch (sortMethod) {
+            case 0:
+                // Sort by name
+                Collections.sort(input);
+                break;
+            case 1:
+                // Sort by set
+                Collections.sort(input, new Card.BySet());
+                break;
+            case 2:
+                // Sort by rarity
+                Collections.sort(input, new Card.ByRarity());
+                break;
+            case 3:
+                // Sort by faction
+                Collections.sort(input, new Card.ByFaction());
+                break;
+            case 4:
+                // Sort by type
+                Collections.sort(input, new Card.ByType());
+                break;
+            default:
+                break;
+        }
+        return input;
+    }
+
+    private List<Card> filter (List<Card> input, HashMap<String, Boolean> filters) {
+        final List<Card> filteredCards = new ArrayList<>();
+        for (Card currCard : input) {
+            // evaluates to false if card is to be filtered out
+            // evaluates to true if card is to stay
+            boolean filterCard = filters.get(currCard.getType()) &&
+                    filters.get(currCard.getRarity()) &&
+                    filters.get(currCard.getFaction()) &&
+                    filters.get(setNumToString(currCard.getSet()));
+            if (filterCard) {
+                filteredCards.add(currCard);
+            }
+        }
+        return filteredCards;
+    }
+
+    private String setNumToString (int setNum) {
+        String error = getResources().getString(R.string.error);
+        String[] set = getResources().getStringArray(R.array.set);
+
+        return (setNum <= set.length && setNum > 0) ? set[setNum - 1] : error;
+    }
+
+    private boolean containsQuery (String query, String name, String[] desc, String[] tribe) {
+        boolean inName = (name.toLowerCase()).contains(query);
+        boolean inDesc = false;
+        boolean inTrib = false;
+        for (int i = 0; i < desc.length; i++) {
+            inDesc = inDesc || (desc[i].toLowerCase()).contains(query);
+            inTrib = inTrib || (tribe[i].toLowerCase()).contains(query);
+        }
+        return inName || inDesc || inTrib;
     }
 }

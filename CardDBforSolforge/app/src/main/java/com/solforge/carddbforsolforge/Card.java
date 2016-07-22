@@ -1,12 +1,12 @@
 package com.solforge.carddbforsolforge;
 
 
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.jar.Pack200;
 
 /*
 *
@@ -44,7 +44,7 @@ class Card implements Comparable<Card> {
 
     private boolean draft;
     private boolean[] levels = new boolean[3];
-    private static String error = "Trouble Loading";
+    private static final String error = "Trouble Loading";
 
     public Card (JSONObject obj) {
         // basic values every card has
@@ -98,7 +98,7 @@ class Card implements Comparable<Card> {
             } // end description handling
 
             // image handling
-            if (type.equals("Spell") && type3.equals("mt")) {
+            if (type.equals("Spell") && type3.equals("mt") && !isLeveledSpell(name)) {
                 Arrays.fill(images, (name.replaceAll(" ", "_") + ".jpg"));
             } else {
                 images[0] = name.replaceAll(" ", "_") + "_1" + ".jpg";
@@ -151,7 +151,7 @@ class Card implements Comparable<Card> {
 
     @Override
     public int compareTo (Card other) {
-        return ((other != null) ? this.getName().compareTo(((Card) other).getName()) : -1);
+        return ((other != null) ? this.getName().compareTo(other.getName()) : -1);
     }
 
     private String parseApostrophes(String input) {
@@ -169,6 +169,10 @@ class Card implements Comparable<Card> {
 
     private boolean isValid(JSONObject object, String desc) {
         return (!(object.isNull(desc)));
+    }
+
+    private boolean isLeveledSpell (String name) {
+        return name.equals("Nethershriek") || name.equals("Phoenix Call");
     }
 
     // getters

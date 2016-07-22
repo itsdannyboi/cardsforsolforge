@@ -55,10 +55,20 @@
     <string name="image">Card Artwork</string>
     <string name="faction">Card Faction</string>
 
+    <!-- Expanded CardView -->
+    <string name="atk_header">Attack:</string>
+    <string name="hlth_header">Health:</string>
+    <string name="type_header">Type:</string>
+    <string name="set_header">Set:</string>
+    <string name="draft_header">Draftable:</string>
+    <string name="description_header">Description:</string>
+
     <!-- Misc -->
     <string name="spell">Spell</string>
     <string name="creature">Creature</string>
-    <string name="description_header">Description:</string>
+    <string name="set_title">Set</string>
+    <string name="acount_header">Profile Image</string>
+    <string name="no_data">No Cards To Show</string>
 
     <string name="basepath">
         https://raw.githubusercontent.com/itsdannyboi/cardsforsolforge/master/SolforgeCardArt/

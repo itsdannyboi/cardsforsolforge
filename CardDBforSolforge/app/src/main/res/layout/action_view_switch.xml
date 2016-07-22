@@ -3,14 +3,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/action_view_switch"
     android:orientation="horizontal"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" >
 
-    <android.support.v7.widget.SwitchCompat
-        android:id="@+id/action_bar_switch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ToggleButton
+        android:id="@+id/toggle_layout"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text=""/>
+        android:background="@drawable/toggle_selector"
+        android:checked="false"
+        android:text=""
+        android:textOff=""
+        android:textOn="" />
 
 </RelativeLayout>
