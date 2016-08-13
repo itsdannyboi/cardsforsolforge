@@ -12,13 +12,17 @@
             android:icon="@drawable/ic_deck_builder"
             android:title="@string/deck_builder" />
         <item
+            android:id="@+id/donate"
+            android:icon="@drawable/ic_donate"
+            android:title="@string/donate" />
+        <item
             android:id="@+id/action_settings"
             android:icon="@drawable/ic_settings"
             android:title="@string/action_settings" />
         <item
-            android:id="@+id/donate"
-            android:icon="@drawable/ic_donate"
-            android:title="@string/donate" />
+            android:id="@+id/about"
+            android:icon="@drawable/ic_about"
+            android:title="@string/about" />
     </group>
 
 </menu>

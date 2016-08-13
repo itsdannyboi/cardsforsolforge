@@ -2,6 +2,7 @@
     <string name="app_name">Cards</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_nav_drawer">Cards</string>
+    <string name="saved_decks">saved_decks</string>
 
     <!-- Nav Drawer Titles -->
     <string name="card_search">Card Search</string>
@@ -16,6 +17,9 @@
     <!-- Menu Titles -->
     <string name="action_settings">Settings</string>
     <string name="action_filter">Filter</string>
+    <string name="action_search">Search</string>
+    <string name="spinner">Spell Level Spinner</string>
+
 
     <!-- Messages -->
     <string name="error">Something Went Wrong (-~-)</string>
@@ -62,6 +66,22 @@
     <string name="set_header">Set:</string>
     <string name="draft_header">Draftable:</string>
     <string name="description_header">Description:</string>
+
+    <!-- Deck Builder -->
+    <string name="deck_name_hint">Deck Name</string>
+    <string name="no_decks">No Decks To Show</string>
+    <string name="edit_deck">Edit Deck</string>
+    <string name="save_deck">Save Deck</string>
+    <string name="decrease">-</string>
+    <string name="increase">+</string>
+    <string name="deck_size_warning_high">Deck Exceeds 30 Cards</string>
+    <string name="deck_size_warning_low">Deck Does Not Contain 30 Cards</string>
+    <string name="card_limit_warning">Deck Contains More Than 3 Of A Card</string>
+    <string name="faction_warning">Deck Exceeds 2 Factions</string>
+
+    <!-- Setting -->
+    <string name="basepath_option">BasePath</string>
+    <string name="basepath_summary">Where would you like to get card art?</string>
 
     <!-- Misc -->
     <string name="spell">Spell</string>

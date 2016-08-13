@@ -7,9 +7,10 @@
     tools:context=".CardSearchFrag">
 
     <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/rv" />
+        android:padding="@dimen/card_margin"/>
 
     <TextView
         android:id="@+id/empty_view"

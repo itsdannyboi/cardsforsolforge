@@ -2,11 +2,20 @@ package com.solforge.carddbforsolforge;
 
 
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 /*
 *
@@ -27,7 +36,7 @@ import java.util.Comparator;
 * author: its_dannyboi
 */
 
-class Card implements Comparable<Card> {
+class Card implements Comparable<Card>, Parcelable {
     private String id;
     private String name;
     private String rarity;
@@ -46,6 +55,7 @@ class Card implements Comparable<Card> {
     private boolean[] levels = new boolean[3];
     private static final String error = "Trouble Loading";
 
+    // Constructor
     public Card (JSONObject obj) {
         // basic values every card has
         try {
@@ -99,7 +109,8 @@ class Card implements Comparable<Card> {
 
             // image handling
             if (type.equals("Spell") && type3.equals("mt") && !isLeveledSpell(name)) {
-                Arrays.fill(images, (name.replaceAll(" ", "_") + ".jpg"));
+                images[0] = name.replaceAll(" ", "_") + ".jpg";
+                //Arrays.fill(images, (name.replaceAll(" ", "_") + ".jpg"));
             } else {
                 images[0] = name.replaceAll(" ", "_") + "_1" + ".jpg";
                 for (int i=0; i < 3; i++) {
@@ -149,30 +160,84 @@ class Card implements Comparable<Card> {
         }
     }
 
+    // Parcelable Constructor
+    public Card (Parcel in) {
+        this.id = in.readString();
+        this.name = in.readString();
+        this.rarity = in.readString();
+        this.type = in.readString();
+        this.type3 = in.readString();
+        this.faction = in.readString();
+        this.desc = in.createStringArray();
+        this.tribe = in.createStringArray();
+        this.images = in.createStringArray();
+        this.set = in.readInt();
+        this.atk = in.createIntArray();
+        this.health = in.createIntArray();
+        this.draft = in.readByte() != 0;
+        this.levels = in.createBooleanArray();
+    }
+
+    @Override
+    public int describeContents () { return 0; }
+
+    @Override
+    public void writeToParcel (Parcel out, int flags) {
+        out.writeString(id);
+        out.writeString(name);
+        out.writeString(rarity);
+        out.writeString(type);
+        out.writeString(type3);
+        out.writeString(faction);
+        out.writeStringArray(desc);
+        out.writeStringArray(tribe);
+        out.writeStringArray(images);
+        out.writeInt(set);
+        out.writeIntArray(atk);
+        out.writeIntArray(health);
+        out.writeByte((byte) (draft ? 1 : 0));
+        out.writeBooleanArray(levels);
+    }
+
+    public static final Parcelable.Creator<Card> CREATOR = new Parcelable.Creator<Card>() {
+        public Card createFromParcel(Parcel in) {
+            return new Card(in);
+        }
+
+        public Card[] newArray (int size) {
+            return new Card[size];
+        }
+    };
+
     @Override
     public int compareTo (Card other) {
         return ((other != null) ? this.getName().compareTo(other.getName()) : -1);
     }
 
-    private String parseApostrophes(String input) {
-        return (input.contains("’") ? input.replaceAll("’", "'") : input);
+    @Override
+    public boolean equals (Object obj) {
+        if (obj == null) { return false; }
+        if (obj == this) { return true; }
+        if (!(obj instanceof Card)) { return false; }
+        Card other = (Card) obj;
+
+        return this.getId().equals(other.getId()) &&
+                this.getName().equals(other.getName()) &&
+                this.getRarity().equals(other.getRarity()) &&
+                this.getFaction().equals(other.getFaction()) &&
+                this.getType().equals(other.getType());
     }
 
-    private String parseStringEndingSpace (String input) {
-
-        if (input.endsWith(" ")) {
-            return input.substring(0, input.length() - 1);
-        }
-        return input;
-
-    }
-
-    private boolean isValid(JSONObject object, String desc) {
-        return (!(object.isNull(desc)));
-    }
-
-    private boolean isLeveledSpell (String name) {
-        return name.equals("Nethershriek") || name.equals("Phoenix Call");
+    @Override
+    public int hashCode () {
+        int result = 17;
+        result = 42 * result + this.id.hashCode();
+        result = 42 * result + this.name.hashCode();
+        result = 42 * result + this.rarity.hashCode();
+        result = 42 * result + this.type.hashCode();
+        result = 42 * result + this.faction.hashCode();
+        result = 42 * result + set;
+        return result;
     }
 
     // getters
@@ -180,6 +245,7 @@ class Card implements Comparable<Card> {
     public String getName () { return name; }
     public String getRarity () { return rarity; }
     public String getType () { return type; }
+    public String getType3 () { return type3; }
     public String getFaction () { return faction; }
     public String[] getDesc () { return desc; }
     public String getDesc (int i) { return desc[i]; }
@@ -201,6 +267,7 @@ class Card implements Comparable<Card> {
     public void setName (String val) { this.name = val; }
     public void setRarity (String val) { this.rarity = val; }
     public void setType (String val) { this.type = val; }
+    public void setType3 (String val) { this.type3 = val; }
     public void setFaction (String val) { this.faction = val; }
     public void setDesc (String[] val) { this.desc = val; }
     public void setDesc (String val, int i) { this.desc[i] = val; }
@@ -281,5 +348,88 @@ class Card implements Comparable<Card> {
                 return card1.getType().compareTo(card2.getType());
             }
         }
+    }
+
+    // utility functions
+    public static int cardRarityHelper (Card cardSelected) {
+        switch (cardSelected.getRarity()) {
+            case "Common":
+                return R.drawable.rec_common;
+            case "Rare":
+                return R.drawable.rec_rare;
+            case "Heroic":
+                return R.drawable.rec_heroic;
+            case "Legendary":
+                return R.drawable.rec_legendary;
+            default:
+                return R.drawable.rec_default;
+        }
+    }
+
+    public static int cardFactionHelper (Card cardSelected) {
+        switch (cardSelected.getFaction()) {
+            case "Alloyin":
+                return R.drawable.ic_alloyin_symbol;
+            case "Nekrium":
+                return R.drawable.ic_nekrium_symbol;
+            case "Tempys":
+                return R.drawable.ic_tempys_symbol;
+            case "Uterra":
+                return R.drawable.ic_uterra_symbol;
+            default:
+                return R.drawable.ic_solforge_symbol;
+        }
+    }
+
+    public static String getFullType (Card cardSelected, int levelSelected) {
+        if (cardSelected.getType().equals("Spell")) {
+            return cardSelected.getType();
+        } else {
+            return (cardSelected.getType() + " - " + cardSelected.getTribe(levelSelected));
+        }
+    }
+
+    public static String getFullType (Card cardSelected) {
+        return getFullType(cardSelected, 0);
+    }
+
+    public static List<Card> readCardDatabaseFromJSON(String cardFileData) {
+        List<Card> parsedDatabase = new ArrayList<>();
+        try {
+            JSONArray jsonArray = new JSONArray(cardFileData);
+            for (int i=0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                if (!(obj.getString("rarity").equals("Token"))) {
+                    parsedDatabase.add(new Card(obj));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+        Collections.sort(parsedDatabase);
+        return parsedDatabase;
+    }
+
+    // local functions
+    private String parseApostrophes(String input) {
+        return (input.contains("’") ? input.replaceAll("’", "'") : input);
+    }
+
+    private String parseStringEndingSpace (String input) {
+
+        if (input.endsWith(" ")) {
+            return input.substring(0, input.length() - 1);
+        }
+        return input;
+
+    }
+
+    public static boolean isValid(JSONObject object, String desc) {
+        return (!(object.isNull(desc)));
+    }
+
+    private boolean isLeveledSpell (String name) {
+        return name.equals("Nethershriek") || name.equals("Phoenix Call");
     }
 }

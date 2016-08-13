@@ -3,7 +3,6 @@ package com.solforge.carddbforsolforge;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -22,6 +21,7 @@ import java.util.HashMap;
 
 public class FilterDialogFragment extends DialogFragment {
 
+    private final static String KEY_FILTERS = "filtersSelected";
     private FilterDialogListener dialogListener;
     private HashMap<String, Boolean> selectedFilters;
 
@@ -34,14 +34,22 @@ public class FilterDialogFragment extends DialogFragment {
     }
 
     public static FilterDialogFragment newInstance(HashMap<String, Boolean> input) {
-
         FilterDialogFragment filterDialogFragment = new FilterDialogFragment();
-        filterDialogFragment.setSelectedFilters(input);
+        Bundle args = new Bundle();
+        args.putSerializable(KEY_FILTERS, input);
+        filterDialogFragment.setArguments(args);
         return filterDialogFragment;
     }
 
     @Override
     public Dialog onCreateDialog (Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            selectedFilters = (HashMap<String, Boolean>)
+                    savedInstanceState.getSerializable(KEY_FILTERS);
+        } else {
+            selectedFilters = (HashMap<String, Boolean>)
+                    getArguments().getSerializable(KEY_FILTERS);
+        }
 
         final String[] rarity = getResources().getStringArray(R.array.rarity);
         final String[] faction = getResources().getStringArray(R.array.faction);
@@ -50,7 +58,7 @@ public class FilterDialogFragment extends DialogFragment {
         final String spellText = getString(R.string.spell);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        View view = getActivity().getLayoutInflater().inflate(R.layout.filter_dialog_fragment,
+        View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_filter,
                 null);
 
         // view data initialization/setting
@@ -104,10 +112,9 @@ public class FilterDialogFragment extends DialogFragment {
         factionView.setLayoutManager(new LinearLayoutManager(getContext()));
         setView.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        CTVAdapter rarityAdapter = new CTVAdapter(getContext(), rarity, FilterDialogFragment.this);
-        CTVAdapter factionAdapter = new CTVAdapter(getContext(), faction,
-                FilterDialogFragment.this);
-        CTVAdapter setAdapter = new CTVAdapter(getContext(), set, FilterDialogFragment.this);
+        CTVAdapter rarityAdapter = new CTVAdapter(rarity, FilterDialogFragment.this);
+        CTVAdapter factionAdapter = new CTVAdapter(faction, FilterDialogFragment.this);
+        CTVAdapter setAdapter = new CTVAdapter(set, FilterDialogFragment.this);
 
         rarityView.setAdapter(rarityAdapter);
         factionView.setAdapter(factionAdapter);
@@ -132,6 +139,12 @@ public class FilterDialogFragment extends DialogFragment {
         return builder.create();
     }
 
+    @Override
+    public void onSaveInstanceState (Bundle savedInstanceState) {
+        savedInstanceState.putSerializable(KEY_FILTERS, selectedFilters);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
     public HashMap<String, Boolean> getSelectedFilters () { return this.selectedFilters; }
     public void setSelectedFilters (HashMap<String, Boolean> vals) {
         this.selectedFilters = new HashMap<>(vals);
@@ -143,12 +156,10 @@ public class FilterDialogFragment extends DialogFragment {
 }
 
 class CTVAdapter extends RecyclerView.Adapter<CTVAdapter.CTVHolder> {
-    private Context context;
     private String[] data;
     private FilterDialogFragment fragment;
 
-    public CTVAdapter (Context context, String[] data, FilterDialogFragment fragment) {
-        this.context = context;
+    public CTVAdapter (String[] data, FilterDialogFragment fragment) {
         this.data = data;
         this.fragment = fragment;
     }
@@ -183,7 +194,7 @@ class CTVAdapter extends RecyclerView.Adapter<CTVAdapter.CTVHolder> {
     public int getItemCount() { return data.length; }
 
     public CTVHolder onCreateViewHolder (ViewGroup viewGroup, int i) {
-        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.list_items,
+        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.adapter_list_items,
                 viewGroup, false);
         return new CTVHolder(view);
     }

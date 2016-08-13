@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/std_margin"
+    android:layout_marginLeft="@dimen/std_margin"
+    android:layout_marginEnd="@dimen/std_margin"
+    android:layout_marginRight ="@dimen/std_margin"
+    android:layout_marginTop="@dimen/std_margin_2x" >
+
+    <android.support.v7.widget.CardView
+        android:id="@id/cv"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <LinearLayout
+            android:id="@+id/layout_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/always_visible"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal" >
+
+                <ImageView
+                    android:id="@+id/dropdown_arrow"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/dropdown_arrow" />
+
+                <TextView
+                    android:id="@+id/deck_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_gravity="center_vertical"
+                    android:textSize="@dimen/adapter_deck_list_text_size"
+                    android:singleLine="true" />
+
+                <LinearLayout
+                    android:id="@+id/faction_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/alloyin"
+                        android:layout_width="@dimen/faction_image_size"
+                        android:layout_height="@dimen/faction_image_size"
+                        android:src="@drawable/ic_alloyin_symbol"
+                        android:contentDescription="@string/faction" />
+
+                    <ImageView
+                        android:id="@+id/nekrium"
+                        android:layout_width="@dimen/faction_image_size"
+                        android:layout_height="@dimen/faction_image_size"
+                        android:src="@drawable/ic_nekrium_symbol"
+                        android:contentDescription="@string/faction" />
+
+                    <ImageView
+                        android:id="@+id/tempys"
+                        android:layout_width="@dimen/faction_image_size"
+                        android:layout_height="@dimen/faction_image_size"
+                        android:src="@drawable/ic_tempys_symbol"
+                        android:contentDescription="@string/faction" />
+
+                    <ImageView
+                        android:id="@+id/uterra"
+                        android:layout_width="@dimen/faction_image_size"
+                        android:layout_height="@dimen/faction_image_size"
+                        android:src="@drawable/ic_uterra_symbol"
+                        android:contentDescription="@string/faction" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/hidden_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" >
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/deck_contents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true" />
+
+                <Button
+                    android:id="@+id/edit_deck"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_margin="16dp"
+                    android:text="@string/edit_deck" />
+
+            </RelativeLayout>
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
+</LinearLayout>

@@ -18,6 +18,9 @@
     <color name="common">#297500</color>
 
     <!-- Page Indicator Dots -->
-    <color name="dot_indicator_inactive">#E0E0E0</color>
+    <color name="dot_indicator_inactive">#616161</color>
     <color name="dot_indicator_active">#BDBDBD</color>
+
+    <!-- Misc Colors -->
+    <color name="transparent_grey">#994D4D4D</color>
 </resources>

@@ -28,4 +28,10 @@
         <item>@string/set_six</item>
         <item>@string/set_seven</item>
     </string-array>
+    <string-array name="levels">
+        <item>Level One</item>
+        <item>Level Two</item>
+        <item>Level Three</item>
+        <item>Level Four</item>
+    </string-array>
 </resources>

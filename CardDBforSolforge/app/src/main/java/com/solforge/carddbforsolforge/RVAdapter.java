@@ -14,9 +14,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 
@@ -60,7 +57,7 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
     public int getItemCount() {
         return cards.size();
     }
-    public List<Card> getCards () { return this.cards; }
+    public List<Card> getCards () { return cards; }
     public void setCards (List<Card> vals) {
         cards.clear();
         cards.addAll(vals);
@@ -85,57 +82,13 @@ public class RVAdapter extends RecyclerView.Adapter<RVAdapter.CardViewHolder> {
 
         cardViewHolder.cardTitle.setText(cards.get(i).getName());
         cardViewHolder.cardRarity.setImageDrawable(ContextCompat.getDrawable(context,
-                cardRarityHelper(i)));
-        cardViewHolder.cardFaction.setImageResource(cardFactionHelper(i));
+                Card.cardRarityHelper(cards.get(i))));
+        cardViewHolder.cardFaction.setImageResource(Card.cardFactionHelper(cards.get(i)));
     }
 
     @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
-    }
-
-    private int cardFactionHelper (int i) {
-        int faction;
-        switch (cards.get(i).getFaction()) {
-            case "Alloyin":
-                faction = R.drawable.ic_alloyin_symbol;
-                break;
-            case "Nekrium":
-                faction = R.drawable.ic_nekrium_symbol;
-                break;
-            case "Tempys":
-                faction = R.drawable.ic_tempys_symbol;
-                break;
-            case "Uterra":
-                faction = R.drawable.ic_uterra_symbol;
-                break;
-            default:
-                faction = R.drawable.ic_solforge_symbol;
-                break;
-        }
-        return faction;
-    }
-
-    private int cardRarityHelper (int i) {
-        int rarity;
-        switch (cards.get(i).getRarity()) {
-            case "Common":
-                rarity = R.drawable.rec_common;
-                break;
-            case "Rare":
-                rarity = R.drawable.rec_rare;
-                break;
-            case "Heroic":
-                rarity = R.drawable.rec_heroic;
-                break;
-            case "Legendary":
-                rarity = R.drawable.rec_legendary;
-                break;
-            default:
-                rarity = R.drawable.rec_default;
-                break;
-        }
-        return rarity;
     }
 
     public Card removeItem (int position) {

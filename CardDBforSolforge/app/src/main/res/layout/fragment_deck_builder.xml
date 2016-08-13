@@ -1,13 +1,100 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     tools:context=".DeckBuilderFrag">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:orientation="vertical"
+        android:layout_margin="16dp" >
+
+        <LinearLayout
+            android:id="@+id/deck_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <EditText
+                android:id="@+id/edit_text_deckname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/deck_name_hint"
+                android:lines="1"
+                android:inputType="text" />
+
+            <LinearLayout
+                android:id="@+id/faction_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/alloyin"
+                    android:layout_width="@dimen/faction_image_size"
+                    android:layout_height="@dimen/faction_image_size"
+                    android:src="@drawable/ic_alloyin_symbol"
+                    android:contentDescription="@string/faction" />
+
+                <ImageView
+                    android:id="@+id/nekrium"
+                    android:layout_width="@dimen/faction_image_size"
+                    android:layout_height="@dimen/faction_image_size"
+                    android:src="@drawable/ic_nekrium_symbol"
+                    android:contentDescription="@string/faction" />
+
+                <ImageView
+                    android:id="@+id/tempys"
+                    android:layout_width="@dimen/faction_image_size"
+                    android:layout_height="@dimen/faction_image_size"
+                    android:src="@drawable/ic_tempys_symbol"
+                    android:contentDescription="@string/faction" />
+
+                <ImageView
+                    android:id="@+id/uterra"
+                    android:layout_width="@dimen/faction_image_size"
+                    android:layout_height="@dimen/faction_image_size"
+                    android:src="@drawable/ic_uterra_symbol"
+                    android:contentDescription="@string/faction" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/deck_contents"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp" >
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/rv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/empty_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:visibility="gone"
+                android:text="@string/no_data"
+                android:textSize="25sp" />
+
+        </RelativeLayout>
+
+        <Button
+            android:id="@+id/save_deck"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/save_deck"/>
+
+    </LinearLayout>
 
 </FrameLayout>

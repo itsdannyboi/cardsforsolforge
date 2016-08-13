@@ -2,13 +2,15 @@ package com.solforge.carddbforsolforge;
 
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,13 +22,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +31,12 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         FilterDialogFragment.FilterDialogListener {
 
     private static final String TAG = "Card Search Frag";
+    private static final String KEY_SPAN = "span";
+    private static final String KEY_DECK_EDIT = "deckEdit";
     private static final String KEY_LAYOUT_MANAGER = "layoutManager";
-    private static final int SPAN_COUNT = 2;
+    private static final String KEY_SCROLL_POSITION = "scrollPosition";
+    private static final String KEY_SORT_METHOD = "sortMethod";
+    private static final String KEY_FILTERS = "selectedFilters";
 
     private enum LayoutManagerType {
         GRID_LAYOUT_MANAGER,
@@ -45,19 +44,30 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
     }
 
     private LayoutManagerType currentLayoutManagerType;
+    private Parcelable layoutManagerState;
     private RecyclerView recyclerView;
     private RecyclerView.LayoutManager layoutManager;
-    private RVAdapter adapter;
+    private CardSearchAdapter adapter;
     private TextView emptyView;
     private ToggleButton toggleButton;
 
     private List<Card> cards;
-    private int sortByItemSelected = 0;
     private HashMap<String, Boolean> selectedFilters;
+    private int sortByItemSelected = 0;
+    private int scrollPosition;
+    private int span = 2;
+    private boolean inDeckEdit;
 
     public static CardSearchFrag newInstance() {
+        return CardSearchFrag.newInstance(2, false);
+    }
+
+    public static CardSearchFrag newInstance(int i, boolean inDeckEdit) {
         CardSearchFrag fragment = new CardSearchFrag();
         Bundle args = new Bundle();
+        args.putInt(KEY_SPAN, i);
+        args.putBoolean(KEY_DECK_EDIT, inDeckEdit);
+        fragment.setArguments(args);
         return fragment;
     }
 
@@ -66,8 +76,13 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
 
-        cards = getCards();
-        initSelected();
+        if (this.getArguments() != null) {
+            Bundle args = getArguments();
+            span = args.getInt(KEY_SPAN);
+            inDeckEdit = args.getBoolean(KEY_DECK_EDIT);
+        }
+        if (cards == null) { cards = MainActivity.getCardsDatabase(); }
+        if (selectedFilters == null) { initSelected(); }
     }
 
     @Override
@@ -81,24 +96,41 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
 
         layoutManager = new LinearLayoutManager(getActivity());
 
-        currentLayoutManagerType = LayoutManagerType.LINEAR_LAYOUT_MANAGER;
+        // if currentLayoutManagerType hasn't been set yet, set it
+        // ie when returning from backstack currentLayoutManagerType should be set already
+        if (currentLayoutManagerType == null) {
+            currentLayoutManagerType = LayoutManagerType.LINEAR_LAYOUT_MANAGER;
+        }
 
+        // restore state after rotations or activity saveInstanceState called
         if (savedInstanceState != null) {
-            // Restore saved layout manager type
             currentLayoutManagerType = (LayoutManagerType) savedInstanceState
                     .getSerializable(KEY_LAYOUT_MANAGER);
+            scrollPosition = savedInstanceState.getInt(KEY_SCROLL_POSITION);
+            sortByItemSelected = savedInstanceState.getInt(KEY_SORT_METHOD);
+            selectedFilters = (HashMap<String, Boolean>) savedInstanceState
+                    .getSerializable(KEY_FILTERS);
         }
-        setRecyclerViewLayoutManager(currentLayoutManagerType);
 
-        adapter = new RVAdapter(cards, getActivity(), CardSearchFrag.this);
+        setRecyclerViewLayoutManager(currentLayoutManagerType);
+        adapter = new CardSearchAdapter(cards, getActivity(), CardSearchFrag.this);
         recyclerView.setAdapter(adapter);
+
+        // restore filter and sort state if configuration changed or returning from backstack
+        checkFilterAndSort(savedInstanceState);
+
+        // restore scroll if configuration changed or returning from backstack
+        if (scrollPosition > 0) {
+            recyclerView.scrollToPosition(scrollPosition);
+        }
 
         return rootView;
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+    public void onCreateOptionsMenu(final Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.card_search_menu, menu);
+
         MenuItem toggle = menu.findItem(R.id.nav_switch);
         toggle.setActionView(R.layout.action_view_switch);
         RelativeLayout relativeLayout = (RelativeLayout) MenuItemCompat.getActionView(toggle);
@@ -110,11 +142,18 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
                 setRecyclerViewLayoutManager(isChecked
                         ? LayoutManagerType.GRID_LAYOUT_MANAGER
                         : LayoutManagerType.LINEAR_LAYOUT_MANAGER);
+                // change card layout type
+                adapter.changeLayoutType(isChecked);
             }
         });
+        // used for restoring state
+        if (currentLayoutManagerType == LayoutManagerType.GRID_LAYOUT_MANAGER) {
+            toggleButton.setChecked(true);
+        }
 
-        /*MenuItem search = menu.findItem(R.id.action_search);
+        MenuItem search = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) MenuItemCompat.getActionView(search);
+        searchView.setIconifiedByDefault(true);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -133,7 +172,7 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
                 }
                 return false;
             }
-        });*/
+        });
 
         super.onCreateOptionsMenu(menu, inflater);
     }
@@ -163,24 +202,50 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
     }
 
     @Override
+    public void onPause() {
+        scrollPosition = getAdapterScrollPosition();
+        super.onPause();
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         // save currently selected layout manager
         savedInstanceState.putSerializable(KEY_LAYOUT_MANAGER, currentLayoutManagerType);
+        savedInstanceState.putInt(KEY_SCROLL_POSITION, getAdapterScrollPosition());
+        savedInstanceState.putInt(KEY_SORT_METHOD, sortByItemSelected);
+        savedInstanceState.putSerializable(KEY_FILTERS, selectedFilters);
         super.onSaveInstanceState(savedInstanceState);
     }
 
-    private void setRecyclerViewLayoutManager (LayoutManagerType layoutManagerType) {
-        int scrollPosition = 0;
-
-        // If a layout manager has already been set, get current scroll position
-        if (recyclerView.getLayoutManager() != null) {
-            scrollPosition = ((LinearLayoutManager) recyclerView.getLayoutManager())
-                    .findFirstCompletelyVisibleItemPosition();
+    @Override
+    public void onClickSortMethod (int i) {
+        sortByItemSelected = i;
+        List<Card> currentCards = new ArrayList<>(adapter.getCards());
+        final List<Card> sortedCards = sort(currentCards, i);
+        adapter.animateTo(sortedCards);
+        if (!isDataEmpty(sortedCards)) {
+            recyclerView.scrollToPosition(0);
         }
+    }
+
+    @Override
+    public void onClickFilter (HashMap<String, Boolean> selectedFilters) {
+        this.selectedFilters = new HashMap<>(selectedFilters);
+        final List<Card> filteredCards = filter(cards, selectedFilters);
+        adapter.animateTo(filteredCards);
+        if (!isDataEmpty(filteredCards)) {
+            recyclerView.scrollToPosition(0);
+        }
+    }
+
+    private void setRecyclerViewLayoutManager (LayoutManagerType layoutManagerType) {
+        // If a layout manager has already been set, get current scroll position
+        scrollPosition = getAdapterScrollPosition();
 
         switch (layoutManagerType) {
             case GRID_LAYOUT_MANAGER:
-                layoutManager = new GridLayoutManager(getActivity(), SPAN_COUNT);
+                layoutManager = new StaggeredGridLayoutManager(span,
+                        StaggeredGridLayoutManager.VERTICAL);
                 currentLayoutManagerType = LayoutManagerType.GRID_LAYOUT_MANAGER;
                 break;
             case LINEAR_LAYOUT_MANAGER:
@@ -196,38 +261,26 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         recyclerView.scrollToPosition(scrollPosition);
     }
 
-    private List<Card> getCards() {
-        List<Card> temp = new ArrayList<>();
-        try {
-            JSONArray jsonArray = new JSONArray(loadJSON());
-            for (int i=0; i < jsonArray.length(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                if (!(obj.getString("rarity").equals("Token"))) {
-                    temp.add(new Card(obj));
+    private int getAdapterScrollPosition () {
+        if (recyclerView.getLayoutManager() != null) {
+            if (currentLayoutManagerType == LayoutManagerType.LINEAR_LAYOUT_MANAGER) {
+                return ((LinearLayoutManager) recyclerView.getLayoutManager())
+                        .findFirstVisibleItemPosition();
+            } else if (currentLayoutManagerType == LayoutManagerType.GRID_LAYOUT_MANAGER) {
+                int[] visiblePositions = new int[2];
+                ((StaggeredGridLayoutManager) recyclerView.getLayoutManager())
+                        .findFirstCompletelyVisibleItemPositions(visiblePositions);
+                if (visiblePositions[0] == RecyclerView.NO_POSITION) {
+                    if (visiblePositions[1] == RecyclerView.NO_POSITION){
+                        return 0;
+                    }
+                    return visiblePositions[1];
+                } else {
+                    return visiblePositions[0];
                 }
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
         }
-        Collections.sort(temp);
-        return temp;
-    }
-
-    private String loadJSON() {
-        String json = null;
-        try {
-            InputStream is = getActivity().getAssets().open("cardDB.json");
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return json;
+        return 0;
     }
 
     private void initSelected() {
@@ -265,32 +318,22 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         }
     }
 
-    @Override
-    public void onClickSortMethod (int i) {
-        sortByItemSelected = i;
-        final List<Card> sortedCards = sort(cards, i);
-        adapter.animateTo(sortedCards);
-        if (!isDataEmpty(sortedCards)) {
-            recyclerView.scrollToPosition(0);
+    public void startEXCV (Card selectedCard) {
+        EXCVFragment excvFragment = EXCVFragment.newInstance(selectedCard);
+        scrollPosition = getAdapterScrollPosition();
+        if (inDeckEdit) {
+            this.getFragmentManager().beginTransaction()
+                    .add(R.id.frag_content, excvFragment, "Extended Card View")
+                    .addToBackStack(null)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                    .commit();
+        } else {
+            this.getFragmentManager().beginTransaction()
+                    .replace(R.id.frag_content, excvFragment, "Extended Card View")
+                    .addToBackStack(null)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                    .commit();
         }
-    }
-
-    @Override
-    public void onClickFilter (HashMap<String, Boolean> selectedFilters) {
-        this.selectedFilters = new HashMap<>(selectedFilters);
-        final List<Card> filteredCards = filter(cards, selectedFilters);
-        adapter.animateTo(filteredCards);
-        if (!isDataEmpty(filteredCards)) {
-            recyclerView.scrollToPosition(0);
-        }
-    }
-
-    public void startEXCV (List<Card> cards, int position) {
-        EXCVFragment excvFragment = EXCVFragment.newInstance(cards.get(position));
-        this.getFragmentManager().beginTransaction()
-                .replace(R.id.frag_content, excvFragment, "Extended Card View")
-                .addToBackStack(null)
-                .commit();
     }
 
     private boolean isDataEmpty (List<Card> input) {
@@ -308,18 +351,21 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
     }
 
     private List<Card> search (List<Card> input, String query) {
-        query = query.toLowerCase();
+        if (query != null) {
+            query = query.toLowerCase();
 
-        final List<Card> searchedCards = new ArrayList<>();
-        for (Card currCard : input) {
-            final String name = currCard.getName();
-            final String[] desc = currCard.getDesc();
-            final String[] tribe = currCard.getTribe();
-            if (containsQuery(query, name, desc, tribe)) {
-                searchedCards.add(currCard);
+            final List<Card> searchedCards = new ArrayList<>();
+            for (Card currCard : input) {
+                final String name = currCard.getName();
+                final String[] desc = currCard.getDesc();
+                final String[] tribe = currCard.getTribe();
+                if (containsQuery(query, name, desc, tribe)) {
+                    searchedCards.add(currCard);
+                }
             }
+            return searchedCards;
         }
-        return searchedCards;
+        return input;
     }
 
     private List<Card> sort (List<Card> input, int sortMethod) {
@@ -327,22 +373,27 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
             case 0:
                 // Sort by name
                 Collections.sort(input);
+                Collections.sort(cards);
                 break;
             case 1:
                 // Sort by set
                 Collections.sort(input, new Card.BySet());
+                Collections.sort(cards, new Card.BySet());
                 break;
             case 2:
                 // Sort by rarity
                 Collections.sort(input, new Card.ByRarity());
+                Collections.sort(cards, new Card.ByRarity());
                 break;
             case 3:
                 // Sort by faction
                 Collections.sort(input, new Card.ByFaction());
+                Collections.sort(cards, new Card.ByFaction());
                 break;
             case 4:
                 // Sort by type
                 Collections.sort(input, new Card.ByType());
+                Collections.sort(cards, new Card.ByType());
                 break;
             default:
                 break;
@@ -378,9 +429,34 @@ public class CardSearchFrag extends Fragment implements SortByDialog.sortByDialo
         boolean inDesc = false;
         boolean inTrib = false;
         for (int i = 0; i < desc.length; i++) {
-            inDesc = inDesc || (desc[i].toLowerCase()).contains(query);
-            inTrib = inTrib || (tribe[i].toLowerCase()).contains(query);
+            if (desc[i] != null) {
+                inDesc = inDesc || (desc[i].toLowerCase()).contains(query);
+            }
+            if (tribe[i] != null) {
+                inTrib = inTrib || (tribe[i].toLowerCase()).contains(query);
+            }
         }
         return inName || inDesc || inTrib;
+    }
+
+    private void checkFilterAndSort (Bundle savedInstanceState) {
+        // check if filters are null, if they are try to pull from savedInstanceState
+        if (selectedFilters == null && savedInstanceState != null) {
+            selectedFilters = (HashMap<String, Boolean>) savedInstanceState
+                    .getSerializable(KEY_FILTERS);
+        }
+        // if no savedInstanceState, filters is either null or exists, if not null apply
+        if (selectedFilters != null && selectedFilters.containsValue(false)) {
+            onClickFilter(selectedFilters);
+        }
+
+        // check if sort is null, if so try to pull from savedInstanceState
+        if (savedInstanceState != null) {
+            sortByItemSelected = savedInstanceState.getInt(KEY_SORT_METHOD);
+        }
+        // if no savedInstanceState, sort is either null or exists, if not null apply
+        if (sortByItemSelected != 0) {
+            onClickSortMethod(sortByItemSelected);
+        }
     }
 }
